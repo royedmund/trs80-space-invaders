@@ -20,6 +20,15 @@
 SCREEN          EQU     3C00H
 KBD_CTL         EQU     3840H   ; bit5=LEFT bit6=RIGHT bit7=SPACE (1=pressed)
 SOUND_PORT      EQU     0FFH
+; Model III serial setup matches MIDISD v0.3.
+KBD_M_ROW       EQU     3802H   ; M = bit 5 (H..O)
+MIDI_RESET      EQU     0E8H
+MIDI_BAUD       EQU     0E9H
+MIDI_STATUS     EQU     0EAH
+MIDI_DATA       EQU     0EBH
+MIDI_PATCH      EQU     64      ; EMT-10 Electric Bass + Piano 1 split
+MIDI_VELOCITY   EQU     90
+MIDI_GATE       EQU     2       ; max game frames per pulse
 BLANK           EQU     128
 
 ; --- Layout (from target screenshots) ---
@@ -55,6 +64,7 @@ START:
 ; Waits press AND release so the game doesn't start firing.
 ; ============================================================
 Splash:
+        CALL    MidiStop                ; no march on splash or DOS exit
         CALL    Cls
         LD      HL, TXT_TITLE
         LD      DE, SCREEN + 1 * 64 + 25
@@ -143,6 +153,10 @@ _sp_prs:
         CALL    FrameDelay
         JR      _sp_prs
 _sp_rel2:
+        ; SPACE alone = cassette. Hold M while pressing SPACE for EMT-10.
+        LD      A, (KBD_M_ROW)
+        AND     20H
+        LD      (MIDI_MODE), A
         ; leaving the splash retires the ticker for good, even if it
         ; never finished its three passes - it belongs to the first
         ; splash only, not to any later one
@@ -154,6 +168,7 @@ _sp_rel2w:
         JR      NZ, _sp_rel2w
 
 RESTART:
+        CALL    MidiInit
         CALL    Cls
         XOR     A
         LD      (SCORE_D), A
@@ -168,6 +183,7 @@ RESTART:
         CALL    InitWave
 
 MainLoop:
+        CALL    MidiService             ; release without a delay loop
         CALL    ReadKeys
         CALL    UpdateBullet
         CALL    UpdateFormation
@@ -216,6 +232,9 @@ Cls:
 ; InitWave - fresh formation, shields, player, projectiles
 ; ============================================================
 InitWave:
+        CALL    MidiRelease
+        XOR     A
+        LD      (MIDI_INDEX), A         ; start each wave on highest note
         LD      A, (UFO_ACT)
         OR      A
         CALL    NZ, EraseUFO            ; row 0 is not part of the area clear
@@ -786,6 +805,7 @@ ResolveInvaderHit:
         JR      NZ, _ri_ok
         LD      A, 1
         LD      (WAVE_DONE), A
+        CALL    MidiRelease             ; last invader: silence the march
 _ri_ok:
         XOR     A                       ; Z = success
         RET
@@ -1325,6 +1345,7 @@ _ut_player:
         LD      E, 1
         LD      D, 0
         CALL    ExplDrawStage
+        CALL    MidiRelease             ; silence during death pause
         CALL    DeathSound              ; doubles as the stage-0 hold
         LD      A, (PLAYER_X)
         LD      C, A
@@ -1684,6 +1705,7 @@ _ku_score:
 ; GameOver - message, wait for SPACE, restart
 ; ============================================================
 GameOver:
+        CALL    MidiStop
         ; new high score? (digit arrays, most significant first)
         LD      B, 4
         LD      HL, HISCORE_D
@@ -1855,6 +1877,9 @@ _boom_loop:
 ; MarchTick - the classic four-note bass loop, one note per
 ; formation step (lower period value = higher pitch)
 MarchTick:
+        LD      A, (MIDI_OK)
+        OR      A
+        JP      NZ, MidiMarch           ; same trigger as cassette march
         LD      A, (MARCH_IX)
         INC     A
         AND     3
@@ -1887,6 +1912,140 @@ _mt_loop:
         RET
 MARCH_TBL:
         DB      180, 200, 220, 240
+
+; ============================================================
+; Optional EMT-10 march, raw channel 1 (no timed transport).
+; FORM_SPD_TBL already accelerates the movement trigger as
+; invaders disappear. Cassette SFX routines are unchanged.
+; ============================================================
+MidiInit:
+        XOR     A
+        LD      (MIDI_OK), A
+        LD      A, (MIDI_MODE)
+        OR      A
+        RET     Z                       ; no serial access in cassette mode
+        XOR     A
+        OUT     (MIDI_RESET), A
+        LD      A, 0EEH                 ; 9600 baud
+        OUT     (MIDI_BAUD), A
+        LD      A, 06FH                 ; MIDISD UART setup
+        OUT     (MIDI_STATUS), A
+        CALL    MidiRelease             ; retry any previous failed note-off
+        RET     C
+        LD      A, 0C0H
+        CALL    MidiSend
+        JP      C, MidiFail
+        LD      A, MIDI_PATCH
+        CALL    MidiSend
+        JP      C, MidiFail
+        LD      A, 0B0H                 ; sustain off
+        CALL    MidiSend
+        JP      C, MidiFail
+        LD      A, 64
+        CALL    MidiSend
+        JP      C, MidiFail
+        XOR     A
+        CALL    MidiSend
+        JP      C, MidiFail
+        LD      A, 1
+        LD      (MIDI_OK), A
+        RET
+
+MidiMarch:
+        CALL    MidiRelease             ; no overlapping notes
+        RET     C
+        LD      A, (MIDI_INDEX)
+        LD      E, A
+        LD      D, 0
+        LD      HL, MIDI_NOTES
+        ADD     HL, DE
+        LD      A, (HL)
+        LD      (MIDI_NOTE), A          ; remember even if TX fails mid-message
+        LD      A, E
+        INC     A
+        AND     3
+        LD      (MIDI_INDEX), A
+        LD      A, 090H                 ; note-on, channel 1
+        CALL    MidiSend
+        JP      C, MidiFail
+        LD      A, (MIDI_NOTE)
+        CALL    MidiSend
+        JP      C, MidiFail
+        LD      A, MIDI_VELOCITY
+        CALL    MidiSend
+        JP      C, MidiFail
+        LD      A, MIDI_GATE
+        LD      (MIDI_GATE_LEFT), A
+        RET
+MIDI_NOTES:
+        DB      43, 41, 39, 36          ; G2 F2 Eb2 C2
+
+MidiService:
+        LD      A, (MIDI_OK)
+        OR      A
+        RET     Z
+        LD      A, (MIDI_GATE_LEFT)
+        OR      A
+        RET     Z
+        DEC     A
+        LD      (MIDI_GATE_LEFT), A
+        RET     NZ
+        JP      MidiRelease
+
+MidiRelease:
+        LD      A, (MIDI_MODE)
+        OR      A
+        RET     Z
+        LD      A, (MIDI_NOTE)
+        OR      A
+        RET     Z
+        LD      A, 080H                 ; explicit note-off, channel 1
+        CALL    MidiSend
+        JP      C, MidiFail
+        LD      A, (MIDI_NOTE)
+        CALL    MidiSend
+        JP      C, MidiFail
+        XOR     A
+        CALL    MidiSend
+        JP      C, MidiFail
+        XOR     A
+        LD      (MIDI_NOTE), A
+        LD      (MIDI_GATE_LEFT), A
+        RET
+
+MidiStop:
+        CALL    MidiRelease
+        XOR     A
+        LD      (MIDI_OK), A
+        LD      (MIDI_MODE), A
+        RET
+
+MidiFail:
+        XOR     A
+        LD      (MIDI_OK), A            ; next step falls back to cassette
+        SCF
+        RET
+
+; A = byte, carry on timeout. Preserve all registers except AF.
+; No interrupt, CTS handshake, or unbounded UART wait.
+MidiSend:
+        PUSH    BC
+        LD      C, A
+        LD      B, 0                    ; 256 polls maximum
+_midi_poll:
+        IN      A, (MIDI_STATUS)
+        BIT     6, A
+        JR      NZ, _midi_ready
+        DJNZ    _midi_poll
+        POP     BC
+        SCF
+        RET
+_midi_ready:
+        LD      A, C
+        OUT     (MIDI_DATA), A
+        POP     BC
+        OR      A                       ; clear carry
+        RET
 
 ; UFOBlip - short high chirp on every saucer move
 UFOBlip:
@@ -2010,6 +2169,11 @@ UFO_DIR:        DB      0
 UFO_PH:         DB      0
 UFO_CNT:        DB      0
 MARCH_IX:       DB      0
+MIDI_MODE:      DB      0               ; M + SPACE opt-in
+MIDI_OK:        DB      0
+MIDI_INDEX:     DB      0
+MIDI_NOTE:      DB      0               ; zero = no outstanding note
+MIDI_GATE_LEFT: DB      0
 WAVE_NUM:       DB      0
 FORM_ACC:       DW      0
 HISCORE_D:      DB      0, 0, 0, 0
