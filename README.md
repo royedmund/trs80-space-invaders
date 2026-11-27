@@ -204,6 +204,8 @@ Build: `zmac space_invaders_sc55.asm`, then run `trs80gp -m3 zout/space_invaders
 
 ## Experimental Model III EMT-10 march
 
+**Experimental test binary:** [INVEMT.CMD](INVEMT.CMD) — 3,856 bytes, load 5500h–63CFh, entry 5500h. Built from the current EMT-10 source using a custom two-pass Z80 assembler because zmac was unavailable. CMD record structure, address coverage and branch ranges were checked; emulator and hardware execution remain unverified. The older `space_invaders.cmd` and LDOS disk are unchanged. See [build notes](INVEMT-BUILD.md).
+
 SPACE alone retains the original cassette soundtrack. On the Model III, hold **M** while pressing **SPACE** at the splash to route only the formation march to the Yamaha EMT-10. Shots, explosions, UFO chirps and player death still use cassette port FFh. Select M+SPACE only when the Model III RS-232 hardware and MIDI bridge are connected.
 
 The four-note motif is G2, F2, Eb2, C2 (MIDI notes 43, 41, 39, 36), channel 1, velocity 90, native EMT-10 program 64 (Electric Bass + Piano 1 split; all notes below the split). Each existing formation step triggers a pulse; the original live-count speed table accelerates it automatically. The two-game-frame maximum gate is cut short at the next formation step. Explicit note-offs are sent on final kill, wave change, player death, game over and BREAK to splash. UART-ready timeout falls back to cassette; a disconnected cable cannot be detected on this one-way link, and a failed note-off may require manually silencing the EMT-10.
@@ -217,6 +219,6 @@ zmac space_invaders.asm
 trs80gp -m3 zout/space_invaders.cmd
 ```
 
-The checked-in CMD and Model III bootable disk remain unchanged and do not contain the new source. The experimental source has not yet been assembled with zmac or run on real hardware. Test SPACE-only, M+SPACE, slow and fast march, wave transition, player death and BREAK before replacing known-good disks. The fixed-point movement table and cassette SFX routines are unchanged; wall-clock timing can differ because the MIDI path replaces the original busy-wait cassette march.
+The older checked-in `space_invaders.cmd` and Model III bootable disk remain unchanged and do not contain the new source. The experimental `INVEMT.CMD` is a separate custom-assembled build; zmac comparison and real-hardware testing are outstanding. Test SPACE-only, M+SPACE, slow and fast march, wave transition, player death and BREAK before replacing known-good disks. The fixed-point movement table and cassette SFX routines are unchanged; wall-clock timing can differ because the MIDI path replaces the original busy-wait cassette march.
 
 Design reference: [Ron Jeffries, Space Invaders 37: Sounds](https://ronjeffries.com/articles/020-invaders-30ff/i-37/). The implementation uses newly chosen pitches and existing movement events rather than the arcade's independent sound timer.
