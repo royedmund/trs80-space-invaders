@@ -179,13 +179,26 @@ the reference screenshots, which is what makes byte-exactness attainable.
 - `BREAK` is bit 2 of the same keyboard row the game already polls (`3840H`).
   Leaving to DOS is `EI` + `JP 402DH`, the standard Model III DOS re-entry.
 
+## RS-232 to MIDI hardware and Arduino Nano
+
+The complete interface design and matching Nano sketch are included in this repository, so the game can be built and the MIDI hardware set up without hunting for files.
+
+![TRS-80 Model III RS-232 to MIDI OUT interface](hardware/minimal-midi-out.svg)
+
+- [Hardware guide, parts list, wiring and setup](hardware/README.md)
+- [Arduino Nano fast v0.3 firmware](firmware/serial_to_midi_fast/serial_to_midi_fast.ino)
+- [Circuit schematic (SVG)](hardware/minimal-midi-out.svg)
+- [License for the copied MIDI materials](hardware/MIDI-INTERFACE-LICENSE.txt)
+
+The companion [Model III MIDI repository](https://github.com/royedmund/TRS-80-Model-III-Simple-Midi-Out) remains the central development location. The local sketch is a snapshot of its fast v0.3 firmware and runs in RAW mode for the game.
+
 ## Experimental Model III EMT-10 march
 
 SPACE alone retains the original cassette soundtrack. On the Model III, hold **M** while pressing **SPACE** at the splash to route only the formation march to the Yamaha EMT-10. Shots, explosions, UFO chirps and player death still use cassette port FFh. Select M+SPACE only when the Model III RS-232 hardware and MIDI bridge are connected.
 
 The four-note motif is G2, F2, Eb2, C2 (MIDI notes 43, 41, 39, 36), channel 1, velocity 90, native EMT-10 program 64 (Electric Bass + Piano 1 split; all notes below the split). Each existing formation step triggers a pulse; the original live-count speed table accelerates it automatically. The two-game-frame maximum gate is cut short at the next formation step. Explicit note-offs are sent on final kill, wave change, player death, game over and BREAK to splash. UART-ready timeout falls back to cassette; a disconnected cable cannot be detected on this one-way link, and a failed note-off may require manually silencing the EMT-10.
 
-Use the existing [MIDISD fast Nano v0.3 firmware](https://github.com/royedmund/TRS-80-Model-III-Simple-Midi-Out/tree/main/player/firmware/serial_to_midi_fast) in default **RAW** mode, not timed-stream mode (no START or tick tokens). Power-cycle the Nano first if it was previously in timed mode or faulted. Model III RS-232 9600 baud -> MAX3232 -> Nano D10 RX -> Nano D1 MIDI TX 31250 -> EMT-10 MIDI IN, channel 1 or OMNI. Amplify the cassette and EMT-10 separately or mix them. No firmware changes.
+Use the existing [included MIDISD fast Nano v0.3 firmware](firmware/serial_to_midi_fast/serial_to_midi_fast.ino) in default **RAW** mode, not timed-stream mode (no START or tick tokens). Power-cycle the Nano first if it was previously in timed mode or faulted. Model III RS-232 9600 baud -> MAX3232 -> Nano D10 RX -> Nano D1 MIDI TX 31250 -> EMT-10 MIDI IN, channel 1 or OMNI. Amplify the cassette and EMT-10 separately or mix them. No firmware changes.
 
 Build and run the current source:
 
