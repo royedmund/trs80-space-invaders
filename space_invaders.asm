@@ -1,5 +1,5 @@
 ; ============================================================
-; SPACE INVADERS - TRS-80 Model I/III (64x16, block graphics)
+; SPACE INVADERS - TRS-80 Model III (64x16, block graphics)
 ;
 ; Formation-based model: one origin (FORM_COL/FORM_ROW/FORM_SUB)
 ; positions all 55 invaders. FORM_SUB is both the 1-pixel
@@ -211,7 +211,7 @@ _ml_nowave:
 ; ============================================================
 ; ExitToDos - hand the machine back to LDOS/TRSDOS. The game
 ; runs with interrupts off and its own stack; 402DH is the
-; standard DOS re-entry on Model I and III and re-inits both.
+; standard DOS re-entry on the Model III.
 ; ============================================================
 ExitToDos:
         EI
@@ -1762,11 +1762,11 @@ _go_prs:
         JP      Splash
 
 ; ============================================================
-; PrintHiScore - write "HSnnnn\r" to the printer (37E8H, memory
-; mapped on Model I and III). tools/play.py captures the printer
+; PrintHiScore - write "HSnnnn\r" to the Model III printer (F8H).
+; tools/play.py captures the printer
 ; into a file and feeds the score back on the next launch.
 ; ============================================================
-PRINTER         EQU     37E8H
+PRINTER_PORT    EQU     0F8H
 
 PrintHiScore:
         LD      A, 'H'
@@ -1783,27 +1783,20 @@ _phs_loop:
         DJNZ    _phs_loop
         LD      A, 13
         ; fall through
-; PrintChar - send A to the printer. Model I maps it at 37E8H,
-; Model III drives port 0F8H; we poll both status views and then
-; write both ways (the inactive one is harmless on either machine).
+; PrintChar - send A to the Model III printer at port F8H.
 PrintChar:
         PUSH    BC
         LD      C, A
         LD      B, 0                    ; 256 tries, then send anyway
 _pc_wait:
-        LD      A, (PRINTER)
-        AND     0F0H
-        CP      30H                     ; Model I ready pattern
-        JR      Z, _pc_send
-        IN      A, (0F8H)
+        IN      A, (PRINTER_PORT)
         AND     0F0H
         CP      30H                     ; Model III ready pattern
         JR      Z, _pc_send
         DJNZ    _pc_wait
 _pc_send:
         LD      A, C
-        LD      (PRINTER), A
-        OUT     (0F8H), A
+        OUT     (PRINTER_PORT), A
         POP     BC
         RET
 

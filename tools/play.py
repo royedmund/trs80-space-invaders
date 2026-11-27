@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
-"""Launch Space Invaders with a persistent high score.
+"""Launch Model III Space Invaders with a persistent high score.
 
 The game prints "HSnnnn\r" to the printer whenever a new high score is
 set at game over. This script:
   1. reads hiscore.dat (repo root; plain 4-digit text),
   2. patches those digits into HISCORE_D inside a temp copy of the
-     release space_invaders.cmd (address taken from zout/space_invaders.bds),
+     freshly assembled zout/space_invaders.cmd (matching zout/space_invaders.bds),
   3. runs trs80gp with the printer captured to a file,
   4. harvests the highest HSnnnn from the capture back into hiscore.dat.
 
-Usage: tools/play.py [extra trs80gp args]        (e.g. -m1, -vol 50)
+Usage: tools/play.py [extra trs80gp args]        (e.g. -vol 50; Model III only)
 """
 import pathlib
 import re
@@ -18,7 +18,7 @@ import sys
 import tempfile
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-CMD = ROOT / 'space_invaders.cmd'
+CMD = ROOT / 'zout' / 'space_invaders.cmd'
 BDS = ROOT / 'zout' / 'space_invaders.bds'
 HISCORE = ROOT / 'hiscore.dat'
 EMU = '/Applications/trs80gp.app/Contents/MacOS/trs80gp'
@@ -68,6 +68,11 @@ def patch_cmd(data: bytes, addr: int, values: bytes) -> bytes:
 
 
 def main():
+    if any(re.fullmatch(r'-m(?:[0-9]+)?', arg, re.I) and arg.lower() != '-m3'
+           for arg in sys.argv[1:]):
+        raise SystemExit('Only the TRS-80 Model III (-m3) is supported.')
+    if not CMD.is_file() or not BDS.is_file():
+        raise SystemExit('Build the current Model III source first: zmac space_invaders.asm')
     hiscore = read_hiscore()
     digits = bytes(int(d) for d in f'{hiscore:04d}')
     addr = symbol_addr('HISCORE_D')

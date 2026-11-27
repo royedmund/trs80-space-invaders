@@ -1,8 +1,9 @@
-# TRS-80 Space Invaders
+# TRS-80 Model III Space Invaders
 
-A faithful Space Invaders for the TRS-80 Model I and Model III, written in Z80
-assembly. Runs on real hardware and in the [trs80gp](http://48k.ca/trs80gp.html)
-emulator.
+A faithful Space Invaders for the TRS-80 Model III, written in Z80 assembly.
+The Model III is the sole supported platform for ongoing development, real-hardware
+play and [trs80gp](http://48k.ca/trs80gp.html) emulator testing. The optional
+Yamaha EMT-10 soundtrack uses the Model III RS-232 interface.
 
 ![Gameplay](assets/gameplay.gif)
 
@@ -15,11 +16,11 @@ emulator.
 - Four eroding shields with pixel-row erosion
 - Per-kill speed-up — the last invader moves at ~14× the starting speed
 - Wave progression: each wave starts lower and fires torpedoes 20% faster
-- Sound: march bass loop, UFO blip, death sound (cassette port audio)
+- Optional EMT-10 four-note march over Model III RS-232 (experimental source);
+  original cassette sound effects and cassette-only mode retained
 - Persistent high score across sessions (via `tools/play.py`)
 - BREAK leaves the game cleanly — in-game back to the splash, splash back to DOS
-- Bootable LDOS disks for both models in [`disks/`](disks/), also submitted to
-  the [RetroStore](https://github.com/apuder/tpk)
+- Bootable Model III LDOS disk in [`disks/`](disks/)
 
 | Splash | In game |
 |---|---|
@@ -28,21 +29,22 @@ emulator.
 ## Play
 
 ```bash
-# recommended: wrapper with persistent high score
+# build and run the current source (including experimental EMT-10 support)
+zmac space_invaders.asm
+trs80gp -m3 zout/space_invaders.cmd
+
+# or use the newly built CMD and symbol file with persistent high score
 tools/play.py
 
-# or run directly (Model III)
+# previous cassette-only release (no EMT-10 support)
 trs80gp -m3 space_invaders.cmd
-
-# or boot the disk, which auto-starts the game
-trs80gp -m3 disks/space_invaders_model3.dsk    # answer the date prompt: 07/16/82
-trs80gp -m1 disks/space_invaders_model1.dsk
+trs80gp -m3 disks/space_invaders_model3.dsk    # date: 07/16/82
 ```
 
 Arrow keys move, SPACE fires, BREAK quits — from the game back to the splash,
 from the splash back to the DOS prompt. Don't use `-turbo` — the game paces
-itself off the frame rate. `space_invaders.cmd` is the prebuilt binary and runs
-unchanged on Model I (`-m1`) and Model III.
+itself off the frame rate. The checked-in `space_invaders.cmd` and Model III disk
+are older cassette-only builds; use the freshly assembled CMD for new features.
 
 ## Build
 
@@ -50,7 +52,7 @@ Assembled with [zmac](http://48k.ca/zmac.html):
 
 ```bash
 zmac space_invaders.asm            # -> zout/space_invaders.cmd
-cp zout/space_invaders.cmd .
+# After testing, copy the new CMD into the release location if desired.
 ```
 
 `ORG` is `5500H` and should stay there. Not for the game's sake — it would run
@@ -58,20 +60,11 @@ just as happily at `5200H` — but because LDOS's `DUMP` command, which is how t
 binary gets onto a disk (see below), **refuses to write anything below `5500H`**.
 Its own overlay area lives down there.
 
-## Rebuilding the bootable disks
+## Rebuilding the Model III bootable disk
 
-`disks/` holds one LDOS image per model, each with `SPACEINV/CMD` on it and an
-`AUTO` entry that starts the game straight after boot:
-
-| | Model I | Model III |
-|---|---|---|
-| Size | 98'304 B | 193'024 B |
-| Geometry | 35 tracks × 10 sectors, single density | 40 tracks × 18 sectors, double density |
-| Why | the stock WD1771 cannot do double density | — |
-| LDOS | 5.3.1 | 5.1.3 |
-
-Both are JV3 (`.dsk`). Rebuilding them is only worth documenting because every
-single step has a trap in it.
+`disks/space_invaders_model3.dsk` is a JV3 LDOS 5.1.3 image (193,024 bytes,
+40 tracks × 18 sectors, double density) containing `SPACEINV/CMD` and an `AUTO`
+entry that starts the game at boot. Back up the image before replacing its binary.
 
 **The date prompt is not broken.** LDOS 5.1.3 is from 1982 and rejects any year
 outside the eighties — silently, by re-prompting. It looks exactly like a dead
@@ -90,27 +83,14 @@ trs80gp -m3 -d0 disks/space_invaders_model3.dsk -batch \
 
 Take `END` from the assembler listing, not from this README.
 
-**Model I — do *not* use `DUMP` here.** LDOS 5.3.1 lacks the address guard that
-5.1.3 has, so `DUMP` will load itself over the very memory it was asked to save
-and write out its own remains. The symptom is a `SYS Error` on the next boot.
-Copy the file from the Model III disk instead — the Model III's 1793 controller
-reads single density, so both disks can be mounted at once:
-
-```bash
-trs80gp -m3 -d0 <model3.dsk> -d1 <model1.dsk> -batch \
-  -iw "Date" -id 150 -i "07/16/82\r" -iw "LDOS Ready" -id 80 \
-  -i "KILL SPACEINV/CMD:1\r" -id 300 \
-  -i "COPY SPACEINV/CMD:0 SPACEINV/CMD:1\r" -id 600 -ix
-```
-
 **A disk that auto-starts never reaches `LDOS Ready`,** so `-iw "LDOS Ready"`
 times out and every command after it is typed into the running game — silently.
 Clear the `AUTO` entry first: it sits in the GAT sector, 16 bytes past the disk
 name, CR-terminated. Overwrite its first byte with `0x0D` to disable it, and
 re-issue `AUTO SPACEINV` when you're done.
 
-**Verify positively — a run without an error message proves nothing.** Both
-failure modes above are silent. Two checks, in this order:
+**Verify positively — a run without an error message proves nothing.**
+Two checks, in this order:
 
 1. The `DUMP` must actually print `Dumping: SPACEINV/CMD:0`. If that line is
    missing, nothing happened.
@@ -130,7 +110,7 @@ predating a given string is on the disk at all. (`-a` matters — without it
 **Screenshots:** trs80gp defaults to `-va` ("authentic display") and bakes
 scanlines and phosphor blur into `-ics` captures — 229 colours and ~50 KB of
 CRT simulation. `-vi -v1` gives the raw pixel matrix the machine actually puts
-out: 512×384 on Model III, 384×288 on Model I, two colours, under 1 KB.
+out: 512×384 on the Model III, two colours, under 1 KB.
 
 ```bash
 trs80gp -m3 -batch -vi -v1 -id 1700 -ics -ix space_invaders.cmd
@@ -171,8 +151,7 @@ the reference screenshots, which is what makes byte-exactness attainable.
   invader count, accumulated per frame.
 - High score persistence abuses the printer port: on a new record the game
   prints `HSnnnn`, `tools/play.py` captures it and patches it back into the
-  binary on next launch (works on Model I *and* III, which map the printer
-  differently).
+  binary on next launch (Model III printer port F8h).
 - The credits ticker on row 0 of the first splash models an endless strip of
   three copies of the message, each followed by 32 blanks: column *c* shows
   strip index `s - 64 + c`, so the text enters at the right edge and the gap
@@ -184,23 +163,23 @@ the reference screenshots, which is what makes byte-exactness attainable.
 - Row 0 sits outside the verification zone (rows 1–15, columns 5–63), so the
   ticker cost nothing in byte-exactness.
 - `BREAK` is bit 2 of the same keyboard row the game already polls (`3840H`).
-  Leaving to DOS is `EI` + `JP 402DH`, the standard re-entry on both models.
+  Leaving to DOS is `EI` + `JP 402DH`, the standard Model III DOS re-entry.
 
 ## Experimental Model III EMT-10 march
 
-SPACE alone retains the original cassette soundtrack. On the Model III, hold **M** while pressing **SPACE** at the splash to route only the formation march to the Yamaha EMT-10. Shots, explosions, UFO chirps and player death still use cassette port FFh. Do not select M+SPACE on a Model I or a machine without Model III RS-232 hardware.
+SPACE alone retains the original cassette soundtrack. On the Model III, hold **M** while pressing **SPACE** at the splash to route only the formation march to the Yamaha EMT-10. Shots, explosions, UFO chirps and player death still use cassette port FFh. Select M+SPACE only when the Model III RS-232 hardware and MIDI bridge are connected.
 
 The four-note motif is G2, F2, Eb2, C2 (MIDI notes 43, 41, 39, 36), channel 1, velocity 90, native EMT-10 program 64 (Electric Bass + Piano 1 split; all notes below the split). Each existing formation step triggers a pulse; the original live-count speed table accelerates it automatically. The two-game-frame maximum gate is cut short at the next formation step. Explicit note-offs are sent on final kill, wave change, player death, game over and BREAK to splash. UART-ready timeout falls back to cassette; a disconnected cable cannot be detected on this one-way link, and a failed note-off may require manually silencing the EMT-10.
 
 Use the existing [MIDISD fast Nano v0.3 firmware](https://github.com/royedmund/TRS-80-Model-III-Simple-Midi-Out/tree/main/player/firmware/serial_to_midi_fast) in default **RAW** mode, not timed-stream mode (no START or tick tokens). Power-cycle the Nano first if it was previously in timed mode or faulted. Model III RS-232 9600 baud -> MAX3232 -> Nano D10 RX -> Nano D1 MIDI TX 31250 -> EMT-10 MIDI IN, channel 1 or OMNI. Amplify the cassette and EMT-10 separately or mix them. No firmware changes.
 
-Build and run this branch:
+Build and run the current source:
 
 ```bash
 zmac space_invaders.asm
 trs80gp -m3 zout/space_invaders.cmd
 ```
 
-The checked-in CMD and bootable disks remain unchanged and do not contain the new source. The experimental source has not yet been assembled with zmac or run on real hardware. Test SPACE-only, M+SPACE, slow and fast march, wave transition, player death and BREAK before replacing known-good disks. The fixed-point movement table and cassette SFX routines are unchanged; wall-clock timing can differ because the MIDI path replaces the original busy-wait cassette march.
+The checked-in CMD and Model III bootable disk remain unchanged and do not contain the new source. The experimental source has not yet been assembled with zmac or run on real hardware. Test SPACE-only, M+SPACE, slow and fast march, wave transition, player death and BREAK before replacing known-good disks. The fixed-point movement table and cassette SFX routines are unchanged; wall-clock timing can differ because the MIDI path replaces the original busy-wait cassette march.
 
 Design reference: [Ron Jeffries, Space Invaders 37: Sounds](https://ronjeffries.com/articles/020-invaders-30ff/i-37/). The implementation uses newly chosen pitches and existing movement events rather than the arcade's independent sound timer.
