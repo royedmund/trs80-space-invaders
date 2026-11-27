@@ -192,6 +192,16 @@ The complete interface design and matching Nano sketch are included in this repo
 
 The companion [Model III MIDI repository](https://github.com/royedmund/TRS-80-Model-III-Simple-Midi-Out) remains the central development location. The local sketch is a snapshot of its fast v0.3 firmware and runs in RAW mode for the game.
 
+## Roland SC-55 all-MIDI edition (experimental)
+
+A separate Model III build sends **all music and sound effects to the Roland SC-55**. No cassette audio, even if the serial interface fails. The original EMT-10/cassette edition is unchanged.
+
+- [SC-55 assembly source](space_invaders_sc55.asm)
+- [SC-55 setup, channel assignments and testing](SC55.md)
+- Uses the same [RS-232 interface](hardware/README.md) and [fast Nano v0.3 firmware](firmware/serial_to_midi_fast/serial_to_midi_fast.ino) in RAW mode.
+
+Build: `zmac space_invaders_sc55.asm`, then run `trs80gp -m3 zout/space_invaders_sc55.cmd`. SPACE starts all-MIDI gameplay. The SC-55 source is experimental; its CMD and disk image have not been built or tested.
+
 ## Experimental Model III EMT-10 march
 
 SPACE alone retains the original cassette soundtrack. On the Model III, hold **M** while pressing **SPACE** at the splash to route only the formation march to the Yamaha EMT-10. Shots, explosions, UFO chirps and player death still use cassette port FFh. Select M+SPACE only when the Model III RS-232 hardware and MIDI bridge are connected.
