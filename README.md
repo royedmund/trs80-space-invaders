@@ -7,6 +7,20 @@ Yamaha EMT-10 soundtrack uses the Model III RS-232 interface.
 
 ![Gameplay](assets/gameplay.gif)
 
+## Original author and acknowledgements
+
+This project is a fork of [TechPrototyper/trs80-space-invaders](https://github.com/TechPrototyper/trs80-space-invaders). Full credit and sincere thanks go to **Tim Walter (TechPrototyper)** for the original TRS-80 Space Invaders project. The upstream game's own title-screen credits acknowledge Tim Walter and Claude (2024–2026), and its inspiration from Space Invaders and Big Five Games.
+
+The original Z80 game engine, formation movement, block graphics, sprite generation, collision handling, shields, scoring, wave progression, cassette audio and byte-exact video RAM verification work provide the foundation for this fork. These are inherited achievements, not new work claimed by this fork. The original in-game credits and Git commit history are preserved.
+
+This fork is maintained by [Roy Edmund Antaw (royedmund)](https://github.com/royedmund), with development focused exclusively on the TRS-80 Model III. Our contributions include the optional Yamaha EMT-10 four-note march, RS-232/Nano MIDI integration, preservation of the original cassette sound effects, and Model III-specific build and hardware support.
+
+- [Original upstream project — TechPrototyper](https://github.com/TechPrototyper/trs80-space-invaders)
+- [Our Model III fork — royedmund](https://github.com/royedmund/trs80-space-invaders)
+- [Companion Model III MIDI interface and Nano firmware](https://github.com/royedmund/TRS-80-Model-III-Simple-Midi-Out)
+
+Thank you to the original developer for making this excellent retro-computing project available and providing such a strong foundation for further experimentation.
+
 ## Features
 
 - Full 5×11 invader formation with pixel-wise (not character-wise) marching and

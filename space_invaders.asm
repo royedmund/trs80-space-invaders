@@ -1,5 +1,10 @@
 ; ============================================================
 ; SPACE INVADERS - TRS-80 Model III (64x16, block graphics)
+; Original project: Tim Walter / TechPrototyper, with Claude (2024-2026).
+; https://github.com/TechPrototyper/trs80-space-invaders
+; Model III / EMT-10 fork: Roy Edmund Antaw (royedmund).
+; https://github.com/royedmund/trs80-space-invaders
+; Original game engine and in-game credits retained.
 ;
 ; Formation-based model: one origin (FORM_COL/FORM_ROW/FORM_SUB)
 ; positions all 55 invaders. FORM_SUB is both the 1-pixel
