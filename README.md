@@ -36,7 +36,6 @@ Thank you to the original developer for making this excellent retro-computing pr
   original cassette sound effects and cassette-only mode retained
 - Persistent high score across sessions (via `tools/play.py`)
 - BREAK leaves the game cleanly — in-game back to the splash, splash back to DOS
-- Bootable Model III LDOS disk in [`disks/`](disks/)
 
 | Splash | In game |
 |---|---|
@@ -54,13 +53,12 @@ tools/play.py
 
 # previous cassette-only release (no EMT-10 support)
 trs80gp -m3 space_invaders.cmd
-trs80gp -m3 disks/space_invaders_model3.dsk    # date: 07/16/82
 ```
 
 Arrow keys move, SPACE fires, BREAK quits — from the game back to the splash,
 from the splash back to the DOS prompt. Don't use `-turbo` — the game paces
-itself off the frame rate. The checked-in `space_invaders.cmd` and Model III disk
-are older cassette-only builds; use the freshly assembled CMD for new features.
+itself off the frame rate. The checked-in `space_invaders.cmd` is an older cassette-only build;
+use the freshly assembled CMD for new features.
 
 ## Build
 
@@ -71,57 +69,7 @@ zmac space_invaders.asm            # -> zout/space_invaders.cmd
 # After testing, copy the new CMD into the release location if desired.
 ```
 
-`ORG` is `5500H` and should stay there. Not for the game's sake — it would run
-just as happily at `5200H` — but because LDOS's `DUMP` command, which is how the
-binary gets onto a disk (see below), **refuses to write anything below `5500H`**.
-Its own overlay area lives down there.
-
-## Rebuilding the Model III bootable disk
-
-`disks/space_invaders_model3.dsk` is a JV3 LDOS 5.1.3 image (193,024 bytes,
-40 tracks × 18 sectors, double density) containing `SPACEINV/CMD` and an `AUTO`
-entry that starts the game at boot. Back up the image before replacing its binary.
-
-**The date prompt is not broken.** LDOS 5.1.3 is from 1982 and rejects any year
-outside the eighties — silently, by re-prompting. It looks exactly like a dead
-keyboard. Answer `07/16/82`.
-
-**Model III — replace the binary with `DUMP`:**
-
-```bash
-trs80gp -m3 -d0 disks/space_invaders_model3.dsk -batch \
-  -iw "Date" -id 150 -i "07/16/82\r" -iw "LDOS Ready" -id 80 \
-  -i "KILL SPACEINV/CMD:0\r" -id 300 \
-  -l zout/space_invaders.cmd -id 60 \
-  -i "DUMP SPACEINV/CMD:0 (START=X'5500',END=X'6294',TRA=X'5500')\r" -id 500 \
-  -i "AUTO SPACEINV\r" -id 300 -ix
-```
-
-Take `END` from the assembler listing, not from this README.
-
-**A disk that auto-starts never reaches `LDOS Ready`,** so `-iw "LDOS Ready"`
-times out and every command after it is typed into the running game — silently.
-Clear the `AUTO` entry first: it sits in the GAT sector, 16 bytes past the disk
-name, CR-terminated. Overwrite its first byte with `0x0D` to disable it, and
-re-issue `AUTO SPACEINV` when you're done.
-
-**Verify positively — a run without an error message proves nothing.**
-Two checks, in this order:
-
-1. The `DUMP` must actually print `Dumping: SPACEINV/CMD:0`. If that line is
-   missing, nothing happened.
-2. **Boot the disk and look.** This is the only check that covers everything.
-
-Searching the image is a weak test, because `KILL` frees the granules without
-wiping them — a hit may be the *old* build you just deleted:
-
-```bash
-grep -ac "INSPIRED BY SPACE INVADERS" disks/space_invaders_model3.dsk
-```
-
-It is still useful for the one question it answers honestly: whether a build
-predating a given string is on the disk at all. (`-a` matters — without it
-`grep` treats the image as binary and just exits 1.)
+`ORG` is `5500H` and should remain unchanged for compatibility with the existing Model III CMD builds.
 
 **Screenshots:** trs80gp defaults to `-va` ("authentic display") and bakes
 scanlines and phosphor blur into `-ics` captures — 229 colours and ~50 KB of
@@ -202,7 +150,7 @@ A separate Model III build sends **all music and sound effects to the Roland SC-
 - [SC-55 setup, channel assignments and testing](SC55.md)
 - Uses the same [RS-232 interface](hardware/README.md) and [fast Nano v0.3 firmware](firmware/serial_to_midi_fast/serial_to_midi_fast.ino) in RAW mode.
 
-Build: `zmac space_invaders_sc55.asm`, then run `trs80gp -m3 zout/space_invaders_sc55.cmd`. SPACE starts all-MIDI gameplay. The SC-55 source is experimental; its CMD and disk image have not been built or tested.
+Build: `zmac space_invaders_sc55.asm`, then run `trs80gp -m3 zout/space_invaders_sc55.cmd`. SPACE starts all-MIDI gameplay. The SC-55 source is experimental; its CMD has not been built or tested.
 
 ## EMT-10 title-screen soundtrack — Echoes from the Void (experimental)
 
@@ -220,7 +168,7 @@ no disk access or MIDI file parser is required during gameplay.
 - The existing four-note invasion march and cassette shooting/explosion
   effects remain intact. The title sends note-offs before switching modes.
 - Use the existing fast Nano v0.3 firmware in RAW mode, 9600 baud.
-- The original source, previous INVEMT.CMD, SC-55 source and disks are unchanged.
+- The original source, previous INVEMT.CMD and SC-55 source are unchanged.
 
 ```bash
 zmac space_invaders_emt_title.asm
@@ -236,7 +184,7 @@ MIDI cable cannot be detected; silence the EMT-10 manually if necessary.
 
 ## Experimental Model III EMT-10 march
 
-**Experimental test binary:** [INVEMT.CMD](INVEMT.CMD) — 3,856 bytes, load 5500h–63CFh, entry 5500h. Built from the current EMT-10 source using a custom two-pass Z80 assembler because zmac was unavailable. CMD record structure, address coverage and branch ranges were checked; emulator and hardware execution remain unverified. The older `space_invaders.cmd` and LDOS disk are unchanged. See [build notes](INVEMT-BUILD.md).
+**Experimental test binary:** [INVEMT.CMD](INVEMT.CMD) — 3,856 bytes, load 5500h–63CFh, entry 5500h. Built from the current EMT-10 source using a custom two-pass Z80 assembler because zmac was unavailable. CMD record structure, address coverage and branch ranges were checked; emulator and hardware execution remain unverified. The older `space_invaders.cmd` is unchanged. See [build notes](INVEMT-BUILD.md).
 
 SPACE alone retains the original cassette soundtrack. On the Model III, hold **M** while pressing **SPACE** at the splash to route only the formation march to the Yamaha EMT-10. Shots, explosions, UFO chirps and player death still use cassette port FFh. Select M+SPACE only when the Model III RS-232 hardware and MIDI bridge are connected.
 
@@ -251,6 +199,6 @@ zmac space_invaders.asm
 trs80gp -m3 zout/space_invaders.cmd
 ```
 
-The older checked-in `space_invaders.cmd` and Model III bootable disk remain unchanged and do not contain the new source. The experimental `INVEMT.CMD` is a separate custom-assembled build; zmac comparison and real-hardware testing are outstanding. Test SPACE-only, M+SPACE, slow and fast march, wave transition, player death and BREAK before replacing known-good disks. The fixed-point movement table and cassette SFX routines are unchanged; wall-clock timing can differ because the MIDI path replaces the original busy-wait cassette march.
+The older checked-in `space_invaders.cmd` remains unchanged and does not contain the new source. The experimental `INVEMT.CMD` is a separate custom-assembled build; zmac comparison and real-hardware testing are outstanding. Test SPACE-only, M+SPACE, slow and fast march, wave transition, player death and BREAK before replacing known-good executables. The fixed-point movement table and cassette SFX routines are unchanged; wall-clock timing can differ because the MIDI path replaces the original busy-wait cassette march.
 
 Design reference: [Ron Jeffries, Space Invaders 37: Sounds](https://ronjeffries.com/articles/020-invaders-30ff/i-37/). The implementation uses newly chosen pitches and existing movement events rather than the arcade's independent sound timer.
