@@ -1,5 +1,7 @@
 # TRS-80 Model III Space Invaders
 
+**[Watch the Yamaha EMT-10 title-screen demonstration (MP4)](SPACE.mp4)**
+
 A faithful Space Invaders for the TRS-80 Model III, written in Z80 assembly.
 The Model III is the sole supported platform for ongoing development, real-hardware
 play and [trs80gp](http://48k.ca/trs80gp.html) emulator testing. The optional
