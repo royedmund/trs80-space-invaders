@@ -212,6 +212,7 @@ _ml_nowave:
 ; standard DOS re-entry on the Model III.
 ; ============================================================
 ExitToDos:
+        CALL    MidiStop                ; retry cleanup if the previous attempt failed
         EI
         JP      402DH
 
@@ -1758,10 +1759,14 @@ _go_cl2:
         ; wait for SPACE released, then pressed
 _go_rel:
         LD      A, (KBD_CTL)
+        BIT     2, A
+        JP      NZ, Splash
         BIT     7, A
         JR      NZ, _go_rel
 _go_prs:
         LD      A, (KBD_CTL)
+        BIT     2, A
+        JP      NZ, Splash
         BIT     7, A
         JR      Z, _go_prs
         JP      Splash
@@ -2090,6 +2095,7 @@ _sc_stop_loop:
         LD      HL, SC_PANIC
         LD      B, SC_PANIC_END - SC_PANIC
         CALL    SC_SendTable
+        RET     C                       ; keep active flag so splash/DOS can retry
         XOR     A
         LD      (MIDI_OK), A
         LD      (MIDI_ACTIVE), A
