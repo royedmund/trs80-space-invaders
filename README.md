@@ -122,3 +122,11 @@ This Model III fork is maintained by [Roy Edmund Antaw (royedmund)](https://gith
 Four-note march design reference: [Ron Jeffries — Space Invaders 37: Sounds](https://ronjeffries.com/articles/020-invaders-30ff/i-37/). This fork uses newly selected pitches and existing formation movement events.
 
 The copied MIDI interface materials carry their own MIT license; it does not extend to the upstream game.
+
+## Shared MIDI transport — MIDICLOCK v0.2 (experimental)
+
+The central [TRS-80 MIDI transport](https://github.com/royedmund/TRS-80-Model-III-Simple-Midi-Out/tree/main/transport) now defines an output-only, length-prefixed RS-232 protocol with tempo records and Nano-generated 24 PPQN MIDI Clock. See the [protocol specification](https://github.com/royedmund/TRS-80-Model-III-Simple-Midi-Out/blob/main/transport/PROTOCOL.md) and [Nano firmware](https://github.com/royedmund/TRS-80-Model-III-Simple-Midi-Out/blob/main/transport/firmware/MIDICLOCK/MIDICLOCK.ino). Existing D10 RX / D1 MIDI TX wiring remains unchanged. The new firmware supports the existing raw note streams and fast FD/F9 buffered transport as compatibility modes; those modes do **not** generate MIDI Clock. This is software-tested, not physically validated.
+
+The EMT-10 title and gameplay march (and the separate SC-55 version) retain their existing raw MIDI output. Clock framing and adaptive march tempo have not yet been implemented; introducing the 160 ms buffered lead would affect synchronisation to game events.
+
+For now, use the existing executable and its documented matching firmware for the known baseline; optionally test raw/legacy compatibility with MIDICLOCK v0.2. Do not send new framed records to old firmware. The Yamaha EMT-10 ignores MIDI Clock itself. The shared transport's clock-enabled MIDISD and EMTPLAY builds are available in the central repository. No executable or game code is changed by this documentation update.
