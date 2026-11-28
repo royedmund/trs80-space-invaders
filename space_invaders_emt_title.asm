@@ -241,6 +241,7 @@ _ml_nowave:
 ; ============================================================
 ExitToDos:
         CALL    TitleStop
+        CALL    MidiReleasePending      ; retry a recorded march note, if any
         EI
         JP      402DH
 
@@ -1732,7 +1733,11 @@ _ku_score:
 ; GameOver - message, wait for SPACE, restart
 ; ============================================================
 GameOver:
-        CALL    MidiStop
+        ; Stop the march without losing the user's selected audio mode.
+        ; Splash captures MIDI_MODE before clearing it and restarts music.
+        CALL    MidiRelease
+        XOR     A
+        LD      (MIDI_OK), A
         ; new high score? (digit arrays, most significant first)
         LD      B, 4
         LD      HL, HISCORE_D
@@ -1780,10 +1785,14 @@ _go_cl2:
         ; wait for SPACE released, then pressed
 _go_rel:
         LD      A, (KBD_CTL)
+        BIT     2, A
+        JP      NZ, Splash
         BIT     7, A
         JR      NZ, _go_rel
 _go_prs:
         LD      A, (KBD_CTL)
+        BIT     2, A
+        JP      NZ, Splash
         BIT     7, A
         JR      Z, _go_prs
         JP      Splash
@@ -1950,6 +1959,8 @@ MidiInit:
         OUT     (MIDI_BAUD), A
         LD      A, 06FH                 ; MIDISD UART setup
         OUT     (MIDI_STATUS), A
+        CALL    TitleStop               ; retry incomplete title cleanup before patch change
+        JP      C, MidiFail
         CALL    MidiRelease             ; retry any previous failed note-off
         RET     C
         LD      A, 0C0H
@@ -2016,6 +2027,7 @@ MidiRelease:
         LD      A, (MIDI_MODE)
         OR      A
         RET     Z
+MidiReleasePending:
         LD      A, (MIDI_NOTE)
         OR      A
         RET     Z
@@ -2239,6 +2251,8 @@ TitleStart:
         LD      A, 06FH
         OUT     (MIDI_STATUS), A
         CALL    TitleStop               ; retry cleanup after an earlier TX failure
+        RET     C
+        CALL    MidiReleasePending      ; silence any retained march note first
         RET     C
         LD      HL, TITLE_THEME
         LD      (TITLE_PTR), HL
