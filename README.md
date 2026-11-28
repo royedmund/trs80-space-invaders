@@ -202,6 +202,36 @@ A separate Model III build sends **all music and sound effects to the Roland SC-
 
 Build: `zmac space_invaders_sc55.asm`, then run `trs80gp -m3 zout/space_invaders_sc55.cmd`. SPACE starts all-MIDI gameplay. The SC-55 source is experimental; its CMD and disk image have not been built or tested.
 
+## EMT-10 title-screen soundtrack — Echoes from the Void (experimental)
+
+A dedicated Model III source edition plays the original atmospheric sci-fi
+theme **Echoes from the Void** automatically on the first title screen.
+The 12-bar composition alternates native EMT-10 strings (program 6) and
+choir (program 8), with up to four simultaneous notes. The raw MIDI events
+are embedded directly in the Z80 source (643 bytes of frame-timed data);
+no disk access or MIDI file parser is required during gameplay.
+
+- [EMT-10 title-screen source](space_invaders_emt_title.asm)
+- **M** toggles title music; SPACE starts gameplay in the current audio mode.
+- **M+SPACE** also selects EMT-10 mode. BREAK from gameplay returns to the
+  splash and resumes music if EMT mode was selected; BREAK on splash exits.
+- The existing four-note invasion march and cassette shooting/explosion
+  effects remain intact. The title sends note-offs before switching modes.
+- Use the existing fast Nano v0.3 firmware in RAW mode, 9600 baud.
+- The original source, previous INVEMT.CMD, SC-55 source and disks are unchanged.
+
+```bash
+zmac space_invaders_emt_title.asm
+trs80gp -m3 zout/space_invaders_emt_title.cmd
+```
+
+The score event table was checked for packet lengths, balanced note-on/off
+events, maximum four-note polyphony, and patch changes with no held notes.
+Nominal loop duration is 37.9 seconds at 30 frames/sec; serial and display
+overhead may alter actual tempo. The integrated source has not yet been
+assembled or tested in the emulator or on real hardware. A disconnected
+MIDI cable cannot be detected; silence the EMT-10 manually if necessary.
+
 ## Experimental Model III EMT-10 march
 
 **Experimental test binary:** [INVEMT.CMD](INVEMT.CMD) — 3,856 bytes, load 5500h–63CFh, entry 5500h. Built from the current EMT-10 source using a custom two-pass Z80 assembler because zmac was unavailable. CMD record structure, address coverage and branch ranges were checked; emulator and hardware execution remain unverified. The older `space_invaders.cmd` and LDOS disk are unchanged. See [build notes](INVEMT-BUILD.md).
