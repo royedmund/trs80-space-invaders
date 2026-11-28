@@ -78,7 +78,7 @@ The game polls transmit-ready with a bounded retry loop. The existing formation 
 - Send raw bytes `C0 40` (program 64), `90 2B 5A` (G2 on), then `80 2B 00` (G2 off) from the Model III with a short pause between note-on and note-off. Do not send ASCII hex strings.
 - Assemble the game with zmac; test SPACE-only, M+SPACE, movement-synchronised notes, increasing pace, wave transition, player death and BREAK. Check both audio outputs independently.
 
-The companion project's fast firmware has successful physical Model III/EMT-10 playback reported for MIDISD. That does not establish that this game's integration has been tested: its updated source still needs assembly and emulator/physical hardware regression. The checked-in CMD and LDOS disk remain older cassette-only builds.
+The companion project's fast firmware has successful physical Model III/EMT-10 playback reported for MIDISD. That does not establish that this game's integration has been tested: its updated source still needs assembly and emulator/physical hardware regression. The checked-in original CMD remains an older cassette-only build.
 
 ## Source, attribution and maintenance
 
