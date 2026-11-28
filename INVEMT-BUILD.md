@@ -13,6 +13,6 @@ Built using a custom two-pass assembler supporting the Z80 instructions and dire
 trs80gp -m3 INVEMT.CMD
 ```
 
-On LDOS, transfer the CMD in binary mode as INVEMT/CMD and enter INVEMT. Hold M while pressing SPACE for EMT-10 audio; SPACE alone starts the cassette-only mode. Use the fast v0.3 Nano in RAW mode. The original release CMD and disk image have not been replaced.
+On LDOS, transfer the CMD in binary mode as INVEMT/CMD and enter INVEMT. Hold M while pressing SPACE for EMT-10 audio; SPACE alone starts the cassette-only mode. Use the fast v0.3 Nano in RAW mode. The original release CMD has not been replaced.
 
 For an independent assembly, run `zmac space_invaders.asm` and compare the decoded load image and transfer address, rather than relying on CMD record grouping alone.
