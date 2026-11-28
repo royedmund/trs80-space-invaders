@@ -1,204 +1,124 @@
-
-
 # TRS-80 Model III Space Invaders
 
-A faithful Space Invaders for the TRS-80 Model III, written in Z80 assembly.
-The Model III is the sole supported platform for ongoing development, real-hardware
-play and [trs80gp](http://48k.ca/trs80gp.html) emulator testing. The optional
-Yamaha EMT-10 soundtrack uses the Model III RS-232 interface.
+A faithful Z80 assembly recreation of Space Invaders for the **TRS-80 Model III**, with original cassette sound effects and optional external MIDI audio. This fork supports the Model III only.
 
-![Gameplay](assets/gameplay.gif)
+![Space Invaders gameplay](assets/gameplay.gif)
 
-## Original author and acknowledgements
+## Editions and downloads
 
-This project is a fork of [TechPrototyper/trs80-space-invaders](https://github.com/TechPrototyper/trs80-space-invaders). Full credit and sincere thanks go to **Tim Walter (TechPrototyper)** for the original TRS-80 Space Invaders project. The upstream game's own title-screen credits acknowledge Tim Walter and Claude (2024–2026), and its inspiration from Space Invaders and Big Five Games.
+| Edition | Audio | Source | CMD / status |
+| --- | --- | --- | --- |
+| Cassette (original release) | Original cassette sounds | [Upstream project](https://github.com/TechPrototyper/trs80-space-invaders) | [space_invaders.cmd](space_invaders.cmd) — existing release |
+| Yamaha EMT-10 march | MIDI four-note march; cassette effects; cassette-only option | [space_invaders.asm](space_invaders.asm) | [INVEMT.CMD](INVEMT.CMD) — experimental assembled build |
+| **Yamaha EMT-10 title edition** | Automatic *Echoes from the Void* title music, MIDI march and cassette effects | [space_invaders_emt_title.asm](space_invaders_emt_title.asm) | Build from current source |
+| Roland SC-55 | All music and effects over MIDI; no cassette audio | [space_invaders_sc55.asm](space_invaders_sc55.asm) | Experimental source; build from source |
 
-The original Z80 game engine, formation movement, block graphics, sprite generation, collision handling, shields, scoring, wave progression, cassette audio and byte-exact video RAM verification work provide the foundation for this fork. These are inherited achievements, not new work claimed by this fork. The original in-game credits and Git commit history are preserved.
-
-This fork is maintained by [Roy Edmund Antaw (royedmund)](https://github.com/royedmund), with development focused exclusively on the TRS-80 Model III. Our contributions include the optional Yamaha EMT-10 four-note march, RS-232/Nano MIDI integration, preservation of the original cassette sound effects, and Model III-specific build and hardware support.
-
-- [Original upstream project — TechPrototyper](https://github.com/TechPrototyper/trs80-space-invaders)
-- [Our Model III fork — royedmund](https://github.com/royedmund/trs80-space-invaders)
-- [Companion Model III MIDI interface and Nano firmware](https://github.com/royedmund/TRS-80-Model-III-Simple-Midi-Out)
-
-Thank you to the original developer for making this excellent retro-computing project available and providing such a strong foundation for further experimentation.
-
-## Features
-
-- Full 5×11 invader formation with pixel-wise (not character-wise) marching and
-  descent, flicker-free rendering on the 64×16 text screen
-- Splash screen with arcade-style score table
-- Mystery ship (UFO) with random 50–200 point bounty
-- Four eroding shields with pixel-row erosion
-- Per-kill speed-up — the last invader moves at ~14× the starting speed
-- Wave progression: each wave starts lower and fires torpedoes 20% faster
-- Optional EMT-10 four-note march over Model III RS-232 (experimental source);
-  original cassette sound effects and cassette-only mode retained
-- Persistent high score across sessions (via `tools/play.py`)
-- BREAK leaves the game cleanly — in-game back to the splash, splash back to DOS
-
-| Splash | In game |
-|---|---|
-| ![Splash screen](assets/splash.png) | ![In game](assets/gameplay.png) |
+The original cassette CMD and earlier EMT-10 march CMD are retained as separate releases. The title edition was previously assembled, but the latest source contains additional cleanup fixes and needs a fresh build. The SC-55 edition also needs assembly and hardware testing.
 
 ## Play
 
-```bash
-# build and run the current source (including experimental EMT-10 support)
+Download an available CMD or assemble the chosen source. On a real Model III, transfer the file in binary mode to your DOS environment (for example, `INVEMT/CMD` under LDOS) and enter its program name.
+
+In [trs80gp](http://48k.ca/trs80gp.html):
+
+```sh
+trs80gp -m3 space_invaders.cmd
+trs80gp -m3 INVEMT.CMD
+```
+
+| Key | Action |
+| --- | --- |
+| Left / right arrows | Move |
+| SPACE | Start / fire |
+| BREAK | Return from gameplay to the splash; press again on splash to exit |
+| M + SPACE | Select EMT-10 MIDI gameplay in the march or title edition |
+| M (title edition) | Toggle title music and select audio mode before starting |
+
+In the EMT-10 march edition, SPACE alone selects cassette-only audio. In the title edition, SPACE starts with the current audio mode; music is enabled on the first splash. In the SC-55 edition, SPACE starts all-MIDI gameplay.
+
+Do not use `-turbo` for normal play: the game and live music are paced by frame delays.
+
+| Splash | Gameplay |
+| --- | --- |
+| ![Title screen](assets/splash.png) | ![Game screen](assets/gameplay.png) |
+
+## Features
+
+- 55 invaders with pixel-wise movement, flicker-free 64×16 graphics and four destructible shields.
+- Mystery ship, increasing wave difficulty and accelerating formation movement.
+- Arcade-style title screen, high score and original scrolling credits.
+- Optional emulator high-score persistence across sessions using [tools/play.py](tools/play.py).
+- Separate EMT-10 and SC-55 sound engines using the Model III RS-232 interface.
+
+## Yamaha EMT-10 music
+
+**Echoes from the Void** is an original dark sci-fi title theme, alternating native strings (program 6) and choir (program 8) with up to four simultaneous notes. The 643-byte embedded MIDI event table loops in approximately 38 seconds at a nominal 30 frames/sec, without a MIDI file parser. Actual timing depends on the Model III and serial overhead.
+
+The title theme stops when gameplay begins and resumes on return to the splash if EMT-10 mode is selected. The latest source preserves that selection at game over and retries incomplete MIDI cleanup.
+
+Both EMT-10 editions use a four-note march — G2, F2, E♭2, C2 — triggered by the existing formation movement. As invaders are eliminated, the march accelerates. The native EMT-10 program is 64 (Electric Bass + Piano 1 split); all four notes fall below the split. Shooting, explosions, UFO chirps and death retain the original cassette sounds.
+
+## Roland SC-55 audio
+
+The experimental SC-55 edition routes all music and sound effects to the Sound Canvas, including the accelerating march, shooting, UFO, explosions and player death. Independent MIDI channels allow effects to overlap. No cassette output or cassette fallback is used.
+
+See [SC55.md](SC55.md) for channel assignments, sound design and testing instructions.
+
+## RS-232 to MIDI interface
+
+```text
+TRS-80 Model III RS-232 (9600 baud)
+  -> MAX3232
+  -> Arduino Nano (D10 RX / D1 TX)
+  -> MIDI OUT (31250 baud)
+  -> Yamaha EMT-10 or Roland SC-55 MIDI IN
+```
+
+- [Hardware setup, wiring and parts list](hardware/README.md)
+- [Circuit schematic](hardware/minimal-midi-out.svg)
+- [Arduino Nano fast v0.3 firmware](firmware/serial_to_midi_fast/serial_to_midi_fast.ino)
+- [MIDI interface license](hardware/MIDI-INTERFACE-LICENSE.txt)
+
+Use the Nano firmware in **RAW mode**; power-cycle the Nano if it was previously used for timed MIDI playback or has faulted. EMT-10 users should connect the cassette and MIDI module audio outputs to separate amplifiers or a suitable audio mixer. SC-55 users only need the module audio output.
+
+The [central Model III MIDI project](https://github.com/royedmund/TRS-80-Model-III-Simple-Midi-Out) remains the primary location for firmware and interface development.
+
+## Build from source
+
+Install [zmac](http://48k.ca/zmac.html), then choose the desired edition:
+
+```sh
+# EMT-10 march / cassette option
 zmac space_invaders.asm
 trs80gp -m3 zout/space_invaders.cmd
 
-# or use the newly built CMD and symbol file with persistent high score
-tools/play.py
-
-# previous cassette-only release (no EMT-10 support)
-trs80gp -m3 space_invaders.cmd
-```
-
-Arrow keys move, SPACE fires, BREAK quits — from the game back to the splash,
-from the splash back to the DOS prompt. Don't use `-turbo` — the game paces
-itself off the frame rate. The checked-in `space_invaders.cmd` is an older cassette-only build;
-use the freshly assembled CMD for new features.
-
-## Build
-
-Assembled with [zmac](http://48k.ca/zmac.html):
-
-```bash
-zmac space_invaders.asm            # -> zout/space_invaders.cmd
-# After testing, copy the new CMD into the release location if desired.
-```
-
-`ORG` is `5500H` and should remain unchanged for compatibility with the existing Model III CMD builds.
-
-**Screenshots:** trs80gp defaults to `-va` ("authentic display") and bakes
-scanlines and phosphor blur into `-ics` captures — 229 colours and ~50 KB of
-CRT simulation. `-vi -v1` gives the raw pixel matrix the machine actually puts
-out: 512×384 on the Model III, two colours, under 1 KB.
-
-```bash
-trs80gp -m3 -batch -vi -v1 -id 1700 -ics -ix space_invaders.cmd
-```
-
-## The interesting part: byte-exact verification
-
-This game was developed against two reference screenshots of the original it
-recreates (`oldproj/StartGame.png`, `oldproj/StartGameOneMoveRight.png`).
-Instead of eyeballing the screen, every change is validated by a pipeline that
-proves the video RAM matches the targets **byte for byte**:
-
-1. `tools/extract_grid.py` deterministically converts the reference PNGs into
-   a 128×48 pixel matrix and the corresponding 64×16 character codes.
-2. trs80gp runs headless (`-batch -turbo`), injects key presses through the
-   keyboard matrix (`-ik`), and dumps raw text VRAM (`-it`) at precise frame
-   counts.
-3. `tools/verify.py` compares the dumps against the targets cell by cell.
-4. `tools/validate_full.py` goes further: it detects the formation position on
-   screen, reconstructs the *expected* full frame, and flags any residue pixel
-   the incremental renderer left behind.
-
-The 18 invader sprite variants (3 types × 2 animation states × 3 vertical
-sub-positions) are not hand-drawn: `tools/gen_sprites.py` generates them from
-the reference screenshots, which is what makes byte-exactness attainable.
-
-## Architecture notes
-
-- **One formation origin** (`FORM_COL/ROW/SUB/YSUB`) positions all 55 invaders —
-  no per-invader address bookkeeping.
-- `FORM_SUB` doubles as horizontal 1-pixel shift *and* animation state;
-  `FORM_YSUB` gives 1-pixel vertical descent with character-row rollover.
-- Sprites are blitted 5 characters wide with blank margins, so movement is
-  self-cleaning: no erase pass, no flicker.
-- Collision is resolved by screen peek plus back-calculation onto the
-  formation slot.
-- March speed comes from an 8.8 fixed-point speed table indexed by the live
-  invader count, accumulated per frame.
-- High score persistence abuses the printer port: on a new record the game
-  prints `HSnnnn`, `tools/play.py` captures it and patches it back into the
-  binary on next launch (Model III printer port F8h).
-- The credits ticker on row 0 of the first splash models an endless strip of
-  three copies of the message, each followed by 32 blanks: column *c* shows
-  strip index `s - 64 + c`, so the text enters at the right edge and the gap
-  falls out of the arithmetic instead of being counted. The row is composed in
-  a RAM buffer and blitted with one `LDIR` — a partial row is on screen for
-  ~0.7 ms, far too briefly for the beam to catch a half-shifted line. Its state
-  is never initialised: `MARQ_S` and `MARQ_DONE` come from the load image as
-  zero, which is why it runs on the first splash and no later one.
-- Row 0 sits outside the verification zone (rows 1–15, columns 5–63), so the
-  ticker cost nothing in byte-exactness.
-- `BREAK` is bit 2 of the same keyboard row the game already polls (`3840H`).
-  Leaving to DOS is `EI` + `JP 402DH`, the standard Model III DOS re-entry.
-
-## RS-232 to MIDI hardware and Arduino Nano
-
-The complete interface design and matching Nano sketch are included in this repository, so the game can be built and the MIDI hardware set up without hunting for files.
-
-![TRS-80 Model III RS-232 to MIDI OUT interface](hardware/minimal-midi-out.svg)
-
-- [Hardware guide, parts list, wiring and setup](hardware/README.md)
-- [Arduino Nano fast v0.3 firmware](firmware/serial_to_midi_fast/serial_to_midi_fast.ino)
-- [Circuit schematic (SVG)](hardware/minimal-midi-out.svg)
-- [License for the copied MIDI materials](hardware/MIDI-INTERFACE-LICENSE.txt)
-
-The companion [Model III MIDI repository](https://github.com/royedmund/TRS-80-Model-III-Simple-Midi-Out) remains the central development location. The local sketch is a snapshot of its fast v0.3 firmware and runs in RAW mode for the game.
-
-## Roland SC-55 all-MIDI edition (experimental)
-
-A separate Model III build sends **all music and sound effects to the Roland SC-55**. No cassette audio, even if the serial interface fails. The original EMT-10/cassette edition is unchanged.
-
-- [SC-55 assembly source](space_invaders_sc55.asm)
-- [SC-55 setup, channel assignments and testing](SC55.md)
-- Uses the same [RS-232 interface](hardware/README.md) and [fast Nano v0.3 firmware](firmware/serial_to_midi_fast/serial_to_midi_fast.ino) in RAW mode.
-
-Build: `zmac space_invaders_sc55.asm`, then run `trs80gp -m3 zout/space_invaders_sc55.cmd`. SPACE starts all-MIDI gameplay. The SC-55 source is experimental; its CMD has not been built or tested.
-
-## EMT-10 title-screen soundtrack — Echoes from the Void (experimental)
-
-A dedicated Model III source edition plays the original atmospheric sci-fi
-theme **Echoes from the Void** automatically on the first title screen.
-The 12-bar composition alternates native EMT-10 strings (program 6) and
-choir (program 8), with up to four simultaneous notes. The raw MIDI events
-are embedded directly in the Z80 source (643 bytes of frame-timed data);
-no disk access or MIDI file parser is required during gameplay.
-
-- [EMT-10 title-screen source](space_invaders_emt_title.asm)
-- **M** toggles title music; SPACE starts gameplay in the current audio mode.
-- **M+SPACE** also selects EMT-10 mode. BREAK from gameplay returns to the
-  splash and resumes music if EMT mode was selected; BREAK on splash exits.
-- The existing four-note invasion march and cassette shooting/explosion
-  effects remain intact. The title sends note-offs before switching modes.
-- Use the existing fast Nano v0.3 firmware in RAW mode, 9600 baud.
-- The original source, previous INVEMT.CMD and SC-55 source are unchanged.
-
-```bash
+# EMT-10 title music
 zmac space_invaders_emt_title.asm
 trs80gp -m3 zout/space_invaders_emt_title.cmd
+
+# Roland SC-55
+zmac space_invaders_sc55.asm
+trs80gp -m3 zout/space_invaders_sc55.cmd
 ```
 
-The score event table was checked for packet lengths, balanced note-on/off
-events, maximum four-note polyphony, and patch changes with no held notes.
-Nominal loop duration is 37.9 seconds at 30 frames/sec; serial and display
-overhead may alter actual tempo. The integrated source has not yet been
-assembled or tested in the emulator or on real hardware. A disconnected
-MIDI cable cannot be detected; silence the EMT-10 manually if necessary.
+The sources use `ORG 5500H`. For emulator high-score persistence, run the launcher after assembling the relevant edition:
 
-## Experimental Model III EMT-10 march
-
-**Experimental test binary:** [INVEMT.CMD](INVEMT.CMD) — 3,856 bytes, load 5500h–63CFh, entry 5500h. Built from the current EMT-10 source using a custom two-pass Z80 assembler because zmac was unavailable. CMD record structure, address coverage and branch ranges were checked; emulator and hardware execution remain unverified. The older `space_invaders.cmd` is unchanged. See [build notes](INVEMT-BUILD.md).
-
-SPACE alone retains the original cassette soundtrack. On the Model III, hold **M** while pressing **SPACE** at the splash to route only the formation march to the Yamaha EMT-10. Shots, explosions, UFO chirps and player death still use cassette port FFh. Select M+SPACE only when the Model III RS-232 hardware and MIDI bridge are connected.
-
-The four-note motif is G2, F2, Eb2, C2 (MIDI notes 43, 41, 39, 36), channel 1, velocity 90, native EMT-10 program 64 (Electric Bass + Piano 1 split; all notes below the split). Each existing formation step triggers a pulse; the original live-count speed table accelerates it automatically. The two-game-frame maximum gate is cut short at the next formation step. Explicit note-offs are sent on final kill, wave change, player death, game over and BREAK to splash. UART-ready timeout falls back to cassette; a disconnected cable cannot be detected on this one-way link, and a failed note-off may require manually silencing the EMT-10.
-
-Use the existing [included MIDISD fast Nano v0.3 firmware](firmware/serial_to_midi_fast/serial_to_midi_fast.ino) in default **RAW** mode, not timed-stream mode (no START or tick tokens). Power-cycle the Nano first if it was previously in timed mode or faulted. Model III RS-232 9600 baud -> MAX3232 -> Nano D10 RX -> Nano D1 MIDI TX 31250 -> EMT-10 MIDI IN, channel 1 or OMNI. Amplify the cassette and EMT-10 separately or mix them. No firmware changes.
-
-Build and run the current source:
-
-```bash
-zmac space_invaders.asm
-trs80gp -m3 zout/space_invaders.cmd
+```sh
+python tools/play.py --edition title
 ```
 
-The older checked-in `space_invaders.cmd` remains unchanged and does not contain the new source. The experimental `INVEMT.CMD` is a separate custom-assembled build; zmac comparison and real-hardware testing are outstanding. Test SPACE-only, M+SPACE, slow and fast march, wave transition, player death and BREAK before replacing known-good executables. The fixed-point movement table and cassette SFX routines are unchanged; wall-clock timing can differ because the MIDI path replaces the original busy-wait cassette march.
+Use `--edition march` or `--edition sc55` for the other editions. Set the `TRS80GP` environment variable if the executable is not on PATH.
 
-Design reference: [Ron Jeffries, Space Invaders 37: Sounds](https://ronjeffries.com/articles/020-invaders-30ff/i-37/). The implementation uses newly chosen pitches and existing movement events rather than the arcade's independent sound timer.
+See [INVEMT-BUILD.md](INVEMT-BUILD.md) for the existing experimental march binary's build provenance and [DEVELOPMENT.md](DEVELOPMENT.md) for architecture, graphics regression and audio testing notes.
+
+## Original author and acknowledgements
+
+This project is a fork of [TechPrototyper/trs80-space-invaders](https://github.com/TechPrototyper/trs80-space-invaders). Full credit and sincere thanks go to **Tim Walter (TechPrototyper)** for the original game. The upstream title-screen credits acknowledge Tim Walter and Claude (2024–2026), and inspiration from Space Invaders and Big Five Games.
+
+The original Z80 game engine, formation movement, graphics, sprite generation, collision handling, shields, scoring, wave progression, cassette audio and byte-exact video RAM verification are inherited achievements. The original in-game credits and Git history are preserved.
+
+This Model III fork is maintained by [Roy Edmund Antaw (royedmund)](https://github.com/royedmund). Its contributions include the EMT-10 march and original title soundtrack, SC-55 all-MIDI audio, RS-232/Nano integration and Model III-specific support.
+
+Four-note march design reference: [Ron Jeffries — Space Invaders 37: Sounds](https://ronjeffries.com/articles/020-invaders-30ff/i-37/). This fork uses newly selected pitches and existing formation movement events.
+
+The copied MIDI interface materials carry their own MIT license; it does not extend to the upstream game.
